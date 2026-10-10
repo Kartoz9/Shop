@@ -1,19 +1,18 @@
-name: CI/CD Pipeline
+
+name: CI
 
 on:
   push:
-    branches:
-      - main
-      - develop
+    branches: [main]
   pull_request:
-    branches:
-      - main
-  workflow_dispatch:
+    branches: [main]
 
 jobs:
-  build-and-test:
-    name: Build and Test Application
+  client:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
 
     steps:
       - name: Checkout repository
@@ -22,24 +21,41 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18.x'
+          node-version: 18
           cache: npm
           cache-dependency-path: client/package-lock.json
 
       - name: Install dependencies
         run: npm ci
-      - name: Run Lint
-        run: npm run lint
-        continue-on-error: true
 
-      - name: Build application
-        run: npm run build
+      - name: Lint
+        run: npm run lint --if-present
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+      - name: Build
+        run: npm run build --if-present
+
+  admin:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: admin
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          name: build-artifacts-${{ github.run_number }}
-          path: |
-            dist/
-            build/
-          retention-days: 7
+          node-version: 18
+          cache: npm
+          cache-dependency-path: admin/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint --if-present
+
+      - name: Build
+        run: npm run build --if-present
